@@ -1,0 +1,13 @@
+version: 2.1
+orbs:
+  cloudfoundry: circleci/cloudfoundry@0.1.12
+
+workflows:
+  build_deploy:
+    jobs:
+      - cloudfoundry/push:
+          appname: build_bully
+          org: eddies-org
+          space: circleci
+          manifest: manifest.yaml
+          package: .
