@@ -6,6 +6,7 @@ workflows:
   build_deploy:
     jobs:
       - cloudfoundry/push:
+          context: Demos-Context
           appname: build_bully
           org: eddies-org
           space: circleci
