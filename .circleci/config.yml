@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  cloudfoundry: circleci/cloudfoundry@0.1.12
+  cloudfoundry: circleci/cloudfoundry@dev:eddie
 
 workflows:
   build_deploy:
