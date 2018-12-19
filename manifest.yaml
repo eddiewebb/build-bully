@@ -1,0 +1,6 @@
+---
+applications:
+- name: build_bully
+  memory: 128M
+  timeout: 20
+  
