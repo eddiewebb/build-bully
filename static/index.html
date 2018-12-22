@@ -4,8 +4,12 @@
 </head>
 <body>
 	<h3>Hi there!</h3>
-	<p>If you would like to restirct forked PR builds, repace your webhook with <pre>http://buildbully.cfapps.io/check_for_label/LABEL</pre></p>
-	<p>Any forked PRs will need to contain that label, or will be silently ignored.</p>
-
+	<p>This site is a webhook proxy for CircleCI.  It will only allow webhooks matching rules all others will be silently ignored.</p>
+	<h4>Forked PR Filter</h4>
+	<ul>
+		<li>Only filters Forked PRS, pushes and same-repo PRS all build as normal</li>
+		<li>Forked PRs are checked for the label provided in URL</li>
+	</ul>
+	<p>Replace your webhook with <pre>http://buildbully.cfapps.io/check_for_label/LABEL</pre></p>
 </body>
 </html>

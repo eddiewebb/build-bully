@@ -30,15 +30,18 @@ class WebHook(Resource):
 		# GitHub form-encoded data just wraps JSON in a "payload" form element.
 		payload = json.loads(request.form['payload'])
 
-
 		action = payload['action']
-		if (action not in ["synchronize","opened"]):
+		if ( action not in ["synchronize","opened","labeled"] ):
 			return self.send_to_circle()
 
 		print("PR Based webhook, inspecting for label")
-		# default to allow it.
-		allow_it = True
 
+		# if our magic label was added, build it.
+		if ( action == "labeled" and payload['label']['name'] == tag_name ):
+			return self.send_to_circle()
+
+		# otherwise, inpect existing labels
+		allow_it = True
 		try:
 			is_forked = payload['pull_request']['head']['repo']['fork']
 			if ( is_forked ):
@@ -72,7 +75,7 @@ class WebHook(Resource):
 			headers={
 				"Content-Type": "application/x-www-form-urlencoded",
 				"X-GitHub-Delivery": request.headers["X-GitHub-Delivery"],
-				"X-GitHub-Event": request.headers["X-GitHub-Event"],
+				"X-GitHub-Event": self.event,
 				"X-Hub-Signature": request.headers["X-Hub-Signature"],
 			},
 			data=request.form,
@@ -80,15 +83,19 @@ class WebHook(Resource):
 		)
 		print("Response from CIrcleCI:")
 		print(response.status_code)
-		print(response.text)
 		response.raise_for_status()
 		print("Success!")
-		return response
+		return response.status_code
 
 
 	def post(self, tag_name):
-		self.forward_if_valid(tag_name)
-		return 200
+		self.event =  request.headers["X-GitHub-Event"]
+		# we only filter PRs, looking for unapproved forks
+		if ( self.event == "pull_request" ):
+			return self.forward_if_valid(tag_name)
+		else:
+			return self.send_to_circle()
+		
 
 
 __main__()
