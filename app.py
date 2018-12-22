@@ -1,6 +1,7 @@
 from flask import Flask, request;
 from flask_restful import Api, Resource
 import requests
+import json
 import os
 
 
@@ -25,7 +26,16 @@ def __main__():
 
 
 class WebHook(Resource):
-	def forward_if_valid(self, payload, tag_name):
+	def forward_if_valid(self, tag_name):
+		# GitHub form-encoded data just wraps JSON in a "payload" form element.
+		payload = json.loads(request.form['payload'])
+
+
+		action = payload['action']
+		if (action not in ["synchronize","opened"]):
+			return self.send_to_circle()
+
+		print("PR Based webhook, inspecting for label")
 		# default to allow it.
 		allow_it = True
 
@@ -45,44 +55,39 @@ class WebHook(Resource):
 			print("Fork key not found, pass it along")
 
 		if (allow_it):
-			return self.pass_it_along(payload)
+			return self.send_to_circle()
 		else:
 			return 400
 
 
-	def pass_it_along(self, payload):
-		print("Attempting to sent to CircleCI")
-		print("payload:")
-		print(payload)
+	def send_to_circle(self):
+		print("Attempting to forward webhook to CircleCI...")
 
 		#requests_session = requests.Session()
+		#
+		#  CircleCI only plays nice with application/x-www-form-urlencoded
+		#
 		response = requests.post(
-			'https://circleci.com/hooks/github',
+			'https://circle.blueskygreenbuilds.com/hooks/github',
 			headers={
-				"Content-Type": "application/json",
+				"Content-Type": "application/x-www-form-urlencoded",
 				"X-GitHub-Delivery": request.headers["X-GitHub-Delivery"],
 				"X-GitHub-Event": request.headers["X-GitHub-Event"],
 				"X-Hub-Signature": request.headers["X-Hub-Signature"],
 			},
-			data=payload,
+			data=request.form,
 			verify=False
 		)
 		print("Response from CIrcleCI:")
 		print(response.status_code)
 		print(response.text)
 		response.raise_for_status()
+		print("Success!")
 		return response
 
 
 	def post(self, tag_name):
-		payload = request.get_json(force=True)
-		action = payload['action']
-
-		if (action in ["synchronize","opened"]):
-			self.forward_if_valid(payload, tag_name)
-		else:
-			self.pass_it_along(payload)
-
+		self.forward_if_valid(tag_name)
 		return 200
 
 
