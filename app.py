@@ -1,5 +1,5 @@
 from flask import Flask, request;
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, reqparse
 import requests
 import json
 import os
@@ -22,13 +22,13 @@ def __main__():
 	# soecific API endpiunts
 	api.add_resource(WebhookResource,"/check_for_label/<string:tag_name>")
 
-	app.run(host='0.0.0.0', port=port)
+	app.run(debug=True,host='0.0.0.0', port=port)
 
 
 
-def send_to_circle(webhook):
+def send_to_circle(site, webhook):
 	response = requests.post(
-		'https://circle.blueskygreenbuilds.com/hooks/github',
+		site + '/hooks/github',
 		headers={
 			"Content-Type": "application/x-www-form-urlencoded",
 			"X-GitHub-Delivery": webhook.headers["X-GitHub-Delivery"],
@@ -43,13 +43,18 @@ def send_to_circle(webhook):
 
 class WebhookResource(Resource):
 	def post(self, tag_name):
+		parser = reqparse.RequestParser()
+		parser.add_argument('site', default='https://circleci.com')
+		args = parser.parse_args()
 		self.webhook = Webhook(request.headers, request.form)
+		self.site = args['site']
+		print("Filtering '" + self.site + "' traffic for label '" + tag_name + "'")
 		# we only filter PRs, looking for unapproved forks
 		if ( self.webhook.is_forked and self.webhook.is_actionable()):
 			return self.apply_filter_by_tag(tag_name)
 		else:
 			# let circle build local PRs, pushes, etc, or just ignore it. Point is we dont care about it.
-			return send_to_circle(self.webhook)
+			return send_to_circle(self.site, self.webhook)
 
 	def apply_filter_by_tag(self, tag_name):		
 		# if our magic label was added, send last attempt on this PR.
@@ -59,7 +64,7 @@ class WebhookResource(Resource):
 
 		if (self.is_label_set(tag_name)):
 			print("Contains label, pass along")
-			return send_to_circle(self.webhook)
+			return send_to_circle(self.site, self.webhook)
 		else:
 			print("Not labled, save for future replay")
 			self.webhook.to_file()
@@ -74,7 +79,7 @@ class WebhookResource(Resource):
 
 	def send_last_to_circle(self):
 		try:
-			return send_to_circle(Webhook.from_file(self.webhook.pr_id))
+			return send_to_circle(self.site, Webhook.from_file(self.webhook.pr_id))
 		except FileNotFoundError:
 			print("Previous webhook for newly labeled PR not found, no webhook to send.")
 			return 200
