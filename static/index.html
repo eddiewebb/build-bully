@@ -5,14 +5,23 @@
 <body>
 	<h3>Hi there!</h3>
 	<p>This site is a webhook proxy for CircleCI.  It will only allow webhooks matching rules all others will be silently ignored.</p>
+	<video width="720" controls>
+	  <source src="static/images/tag_allow.mov" type="video/mp4">
+	  <source src="movie.ogg" type="video/ogg">
+	Your browser does not support the video tag.
+	</video>
+
+
+
 	<h4>Rule: Forked PR Filter</h4>
 	<p>Currently the only rule.</p>
 	<ul>
 		<li>Only filters Forked PRS, pushes and same-repo PRS all build as normal</li>
 		<li>Forked PRs are checked for the label provided in URL</li>
+		<li>Once an OSS maintainer add the configured label, the last push/commit will build.</li>
 	</ul>
 	<p>Replace your webhook with <pre>http://buildbully.cfapps.io/check_for_label/LABEL</pre> <img src="/static/images/webhook.png" /></p>
 	<p>Only PRs that have had the label applied will be passed to CircleCI for processing. <br/><img src="/static/images/pr_summary.png" /></p>
-	<p><Strong>Caveat</Strong>: Due to CirceCIC event processing, contributors will need to make an additional commit <em>after</em> the label is applied. <br/><img src="/static/images/caveat.png" /></p>
+	
 </body>
 </html>
