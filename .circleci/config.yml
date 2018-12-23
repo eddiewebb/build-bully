@@ -12,3 +12,7 @@ workflows:
           space: circleci
           manifest: manifest.yaml
           package: .
+          filters:
+            branches:
+              only: master
+
