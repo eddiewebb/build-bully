@@ -4,10 +4,15 @@ import requests
 import json
 import os
 import pickle
-
+from Crypto.PublicKey import RSA
 
 # Set environment Variables
 port = int(os.getenv("PORT","5000"))
+webhook_secret=os.getenv("GITHUB_WEBHOOK_SECRET")
+app_identifier=os.getenv("GITHUB_APP_IDENTIFIER")
+private_key_path=os.getenv("GITHUB_PRIVATE_KEY")
+key_file=open(private_key_path, "r")
+private_key=RSA.importKey(key_file.read())
 
 
 def __main__():
