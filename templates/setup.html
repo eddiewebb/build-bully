@@ -1,0 +1,22 @@
+<html>
+<head>
+	<title>Build Bully for CircleCI</title>
+</head>
+<body>
+	{% with messages = get_flashed_messages() %}
+	  {% if messages %}
+	    <div class=flashes>
+	    {% for message in messages %}
+	      <span>{{ message }}</span>
+	    {% endfor %}
+	    </div>
+	  {% endif %}
+	{% endwith %}
+	{% if name %}
+	  <h1>Hello {{ name }}!</h1>
+	{% else %}
+	  	<h3>Hi there!</h3>
+		<p>please <a href="https://github.com/login/oauth/authorize?client_id=Iv1.12ce2c097c25f4d1&state=foooooooo&redirect_uri=https://bcacdf30.ngrok.io/oauth">Login</a></p>
+	{% endif %}
+</body>
+</html>

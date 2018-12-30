@@ -5,25 +5,11 @@ import os
 import logging
 import requests
 import json
-import urllib
 
 #oauth as user to edit stuff
 #https://github.com/login/oauth/authorize?client_id=Iv1.12ce2c097c25f4d1&state=foooooooo&redirect_uri=https://bcacdf30.ngrok.io/oauth
 
 class ConfigResource(Resource):
-
-	def get(self):		
-		print("Oauth Request "  )
-		print("*********************")
-		print(request.headers)
-		print("*********************")
-		parser = reqparse.RequestParser()
-		parser.add_argument('code')
-		args = parser.parse_args()
-		self.get_access_token(args['code'])
-
-		# repo added, or webhook added/chanegd
-
 
 
 	def get_access_token(self, code):
@@ -42,9 +28,17 @@ class ConfigResource(Resource):
 		update.raise_for_status()
 		args = urllib.parse.parse_qs(update.text)
 		print(args['access_token'])
-		
+		return args['access_token'][0]
 
 
 
-oauth_client_id=os.getenv("GITHUB_OAUTH_ID")
-oauth_client_secret=os.getenv("GITHUB_OAUTH_SECRET")
+	def get_installations(self, token):
+		update = requests.get('https://api.github.com/user/installations',
+				headers = {
+					"Accept":"application/vnd.github.machine-man-preview+json",
+					"Authorization" : "token " + token
+				}
+			)
+		print(update.text)
+		update.raise_for_status()
+

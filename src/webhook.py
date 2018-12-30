@@ -1,5 +1,24 @@
-from flask import request;
+from flask import request, current_app;
 from flask_restful import Resource,reqparse
+import json
+import pickle
+import os
+import requests
+
+
+def send_to_circle(site, webhook):
+	response = requests.post(
+		site + '/hooks/github',
+		headers={
+			"Content-Type": "application/x-www-form-urlencoded",
+			"X-GitHub-Delivery": webhook.headers["X-GitHub-Delivery"],
+			"X-GitHub-Event": webhook.headers["X-GitHub-Event"],
+			"X-Hub-Signature": webhook.headers["X-Hub-Signature"],
+		},
+		data=webhook.form,
+		verify=False
+	)
+	return response.status_code
 
 
 class WebhookResource(Resource):
@@ -9,7 +28,7 @@ class WebhookResource(Resource):
 		args = parser.parse_args()
 		self.webhook = Webhook(request.headers, request.form)
 		self.site = args['site']
-		logger.debug("Filtering '" + self.site + "' traffic for label '" + tag_name + "'")
+		current_app.logger.debug("Filtering '" + self.site + "' traffic for label '" + tag_name + "'")
 		# we only filter PRs, looking for unapproved forks
 		if ( self.webhook.is_forked and self.webhook.is_actionable()):
 			return self.apply_filter_by_tag(tag_name)
@@ -20,21 +39,21 @@ class WebhookResource(Resource):
 	def apply_filter_by_tag(self, tag_name):		
 		# if our magic label was added, send last attempt on this PR.
 		if ( self.webhook.is_newly_labeled_with(tag_name) ):
-			logger.debug("New label, attempt replay")
+			current_app.logger.debug("New label, attempt replay")
 			return self.send_last_to_circle()
 
 		if (self.is_label_set(tag_name)):
-			logger.debug("Contains label, pass along")
+			current_app.logger.debug("Contains label, pass along")
 			return send_to_circle(self.site, self.webhook)
 		else:
-			logger.debug("Not labled, save for future replay")
+			current_app.logger.debug("Not labled, save for future replay")
 			self.webhook.to_file()
 			return 200
 
 	def is_label_set(self, label_name):
 		for label in self.webhook.labels:
 			if ( label['name'] == label_name ):
-				logger.debug("Found PR label with value: " + label_name + ", will pass webhook along")
+				current_app.logger.debug("Found PR label with value: " + label_name + ", will pass webhook along")
 				return True	
 		return False
 
@@ -42,7 +61,7 @@ class WebhookResource(Resource):
 		try:
 			return send_to_circle(self.site, Webhook.from_file(self.webhook.pr_id))
 		except FileNotFoundError:
-			logger.debug("Previous webhook for newly labeled PR not found, no webhook to send.")
+			current_app.logger.debug("Previous webhook for newly labeled PR not found, no webhook to send.")
 			return 200
 
 
